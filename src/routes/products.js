@@ -38,15 +38,18 @@ const upload = multer({
     }
   },
 });
-// قبل ما ترجع products في response
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3001';
 
-products: rows.map(p => ({
-  ...p,
-  image_path: p.image_path ? `${BASE_URL}${p.image_path}` : null
-}))
+// دالة مساعدة لبناء الـ URL الكامل للصورة
+function getImageUrl(req, imagePath) {
+  if (!imagePath) return null;
+  if (imagePath.startsWith('http')) return imagePath;
+  const baseUrl = process.env.BASE_URL ||
+    `${req.protocol}://${req.get('host')}`;
+  return `${baseUrl}${imagePath}`;
+}
+
 // دمج بيانات المخزون مع كل منتج (الكمية الإجمالية عبر كل المواقع)
-function attachStockSummary(products) {
+function attachStockSummary(products, req) {
   return products.map((p) => {
     const stockRows = all(
       `SELECT l.id as location_id, l.name as location_name, l.type, COALESCE(i.quantity, 0) as quantity
@@ -59,6 +62,7 @@ function attachStockSummary(products) {
     const totalQty = stockRows.reduce((sum, r) => sum + r.quantity, 0);
     return {
       ...p,
+      image_path: getImageUrl(req, p.image_path),
       is_active: !!p.is_active,
       allow_fractional_qty: !!p.allow_fractional_qty,
       stock_by_location: stockRows,
@@ -91,7 +95,7 @@ router.get('/', (req, res) => {
   sql += ` ORDER BY p.created_at DESC`;
 
   let products = all(sql, params);
-  products = attachStockSummary(products);
+  products = attachStockSummary(products, req);
 
   // فلترة نواقص المخزون (تتم بعد حساب الكمية الإجمالية)
   if (low_stock === 'true') {
@@ -117,7 +121,7 @@ router.get('/:id', (req, res) => {
   );
   if (!product) return res.status(404).json({ error: 'المنتج غير موجود' });
 
-  const [withStock] = attachStockSummary([product]);
+  const [withStock] = attachStockSummary([product], req);
 
   if (!req.user.can_view_cost_price && req.user.role !== 'admin') {
     delete withStock.cost_price;
@@ -134,7 +138,7 @@ router.get('/barcode/:barcode', (req, res) => {
   );
   if (!product) return res.status(404).json({ error: 'لا يوجد منتج بهذا الباركود' });
 
-  const [withStock] = attachStockSummary([product]);
+  const [withStock] = attachStockSummary([product], req);
   if (!req.user.can_view_cost_price && req.user.role !== 'admin') {
     delete withStock.cost_price;
   }
@@ -328,6 +332,22 @@ router.put('/:id', authorize('admin', 'manager', 'warehouse'), upload.single('im
   }
 });
 
+// DELETE /api/products/:id/image - حذف صورة منتج فقط (بدون التأثير على باقي بيانات المنتج)
+router.delete('/:id/image', authorize('admin', 'manager', 'warehouse'), (req, res) => {
+  const { id } = req.params;
+  const existing = get(`SELECT * FROM products WHERE id = ?`, [id]);
+  if (!existing) return res.status(404).json({ error: 'المنتج غير موجود' });
+
+  if (existing.image_path) {
+    const oldPath = path.join(__dirname, '..', existing.image_path.replace('/uploads', 'uploads'));
+    fs.unlink(oldPath, () => {});
+  }
+
+  run(`UPDATE products SET image_path = NULL, updated_at = datetime('now') WHERE id = ?`, [id]);
+  logAction(req.user.id, 'update', 'product', id, { image_removed: true });
+  res.json({ message: 'تم حذف صورة المنتج بنجاح' });
+});
+
 // DELETE /api/products/:id - تعطيل منتج (soft delete للحفاظ على سجل الحركات)
 router.delete('/:id', authorize('admin', 'manager'), (req, res) => {
   const { id } = req.params;
@@ -352,6 +372,39 @@ router.get('/:id/movements', (req, res) => {
     [req.params.id]
   );
   res.json({ movements });
+});
+
+// GET /api/products/print/barcode?ids=1,2,3 — جلب بيانات منتجات للطباعة
+router.get('/print/barcode', (req, res) => {
+  const { ids } = req.query;
+  let products;
+
+  if (ids) {
+    const idList = ids.split(',').map(s => parseInt(s.trim())).filter(Boolean);
+    if (!idList.length) return res.json({ products: [] });
+    const placeholders = idList.map(() => '?').join(',');
+    products = all(
+      `SELECT p.id, p.name, p.name_en, p.sku, p.barcode, p.sale_price, p.image_path
+       FROM products p
+       WHERE p.id IN (${placeholders}) AND p.is_active = 1
+       ORDER BY p.name`,
+      idList
+    );
+  } else {
+    products = all(
+      `SELECT p.id, p.name, p.name_en, p.sku, p.barcode, p.sale_price, p.image_path
+       FROM products p
+       WHERE p.is_active = 1 AND p.barcode IS NOT NULL AND p.barcode != ''
+       ORDER BY p.name`
+    );
+  }
+
+  products = products.map(p => ({
+    ...p,
+    image_path: getImageUrl(req, p.image_path),
+  }));
+
+  res.json({ products, count: products.length });
 });
 
 module.exports = router;

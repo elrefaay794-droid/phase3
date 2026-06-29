@@ -372,3 +372,183 @@ function createProcurementSchema() {
 }
 
 module.exports.createProcurementSchema = createProcurementSchema;
+
+// ═══════════════════════════════════════════════════════
+//  المرحلة الثالثة — المبيعات والعملاء والتقسيط والمردودات
+// ═══════════════════════════════════════════════════════
+
+function createSalesSchema() {
+  // ─── العملاء ───
+  run(`
+    CREATE TABLE IF NOT EXISTS customers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      name_en TEXT,
+      type TEXT NOT NULL DEFAULT 'retail'
+        CHECK(type IN ('retail','wholesale','vip','contractor')),
+      phone TEXT,
+      phone2 TEXT,
+      email TEXT,
+      address TEXT,
+      city TEXT,
+      country TEXT DEFAULT 'مصر',
+      tax_number TEXT,
+      contact_person TEXT,
+      discount_pct REAL NOT NULL DEFAULT 0,
+      credit_limit REAL DEFAULT 0,
+      payment_terms INTEGER DEFAULT 0,
+      opening_balance REAL DEFAULT 0,
+      notes TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
+  // ─── الفواتير ───
+  run(`
+    CREATE TABLE IF NOT EXISTS invoices (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      invoice_number TEXT NOT NULL UNIQUE,
+      customer_id INTEGER NOT NULL,
+      location_id INTEGER,
+      invoice_date TEXT NOT NULL DEFAULT (date('now')),
+      due_date TEXT,
+      status TEXT NOT NULL DEFAULT 'draft'
+        CHECK(status IN ('draft','confirmed','partial','paid','cancelled','refunded')),
+      payment_type TEXT NOT NULL DEFAULT 'cash'
+        CHECK(payment_type IN ('cash','credit','installment')),
+      subtotal REAL NOT NULL DEFAULT 0,
+      discount_pct REAL NOT NULL DEFAULT 0,
+      discount_amount REAL NOT NULL DEFAULT 0,
+      tax_pct REAL NOT NULL DEFAULT 0,
+      tax_amount REAL NOT NULL DEFAULT 0,
+      total REAL NOT NULL DEFAULT 0,
+      paid_amount REAL NOT NULL DEFAULT 0,
+      notes TEXT,
+      notes_en TEXT,
+      user_id INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (customer_id) REFERENCES customers(id),
+      FOREIGN KEY (location_id) REFERENCES locations(id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+  `);
+
+  // ─── بنود الفاتورة ───
+  run(`
+    CREATE TABLE IF NOT EXISTS invoice_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      invoice_id INTEGER NOT NULL,
+      product_id INTEGER NOT NULL,
+      quantity REAL NOT NULL,
+      unit_price REAL NOT NULL,
+      discount_pct REAL NOT NULL DEFAULT 0,
+      line_total REAL NOT NULL,
+      returned_qty REAL NOT NULL DEFAULT 0,
+      FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+      FOREIGN KEY (product_id) REFERENCES products(id)
+    );
+  `);
+
+  // ─── مدفوعات العملاء ───
+  run(`
+    CREATE TABLE IF NOT EXISTS customer_payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      payment_number TEXT NOT NULL UNIQUE,
+      customer_id INTEGER NOT NULL,
+      invoice_id INTEGER,
+      amount REAL NOT NULL,
+      payment_method TEXT NOT NULL DEFAULT 'cash'
+        CHECK(payment_method IN ('cash','bank_transfer','cheque','card','other')),
+      payment_date TEXT NOT NULL DEFAULT (date('now')),
+      reference TEXT,
+      notes TEXT,
+      user_id INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (customer_id) REFERENCES customers(id),
+      FOREIGN KEY (invoice_id) REFERENCES invoices(id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+  `);
+
+  // ─── أقساط العملاء ───
+  run(`
+    CREATE TABLE IF NOT EXISTS customer_installments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      invoice_id INTEGER NOT NULL,
+      customer_id INTEGER NOT NULL,
+      installment_number INTEGER NOT NULL,
+      amount REAL NOT NULL,
+      due_date TEXT NOT NULL,
+      paid_amount REAL NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'pending'
+        CHECK(status IN ('pending','partial','paid','overdue')),
+      payment_id INTEGER,
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (invoice_id) REFERENCES invoices(id),
+      FOREIGN KEY (customer_id) REFERENCES customers(id),
+      FOREIGN KEY (payment_id) REFERENCES customer_payments(id)
+    );
+  `);
+
+  // ─── مردودات المبيعات ───
+  run(`
+    CREATE TABLE IF NOT EXISTS sales_returns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      return_number TEXT NOT NULL UNIQUE,
+      invoice_id INTEGER NOT NULL,
+      customer_id INTEGER NOT NULL,
+      location_id INTEGER NOT NULL,
+      return_date TEXT NOT NULL DEFAULT (date('now')),
+      return_type TEXT NOT NULL DEFAULT 'refund'
+        CHECK(return_type IN ('refund','exchange','repair')),
+      status TEXT NOT NULL DEFAULT 'pending'
+        CHECK(status IN ('pending','approved','completed','rejected')),
+      total_refund REAL NOT NULL DEFAULT 0,
+      reason TEXT,
+      notes TEXT,
+      user_id INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (invoice_id) REFERENCES invoices(id),
+      FOREIGN KEY (customer_id) REFERENCES customers(id),
+      FOREIGN KEY (location_id) REFERENCES locations(id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+  `);
+
+  run(`
+    CREATE TABLE IF NOT EXISTS sales_return_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      return_id INTEGER NOT NULL,
+      invoice_item_id INTEGER NOT NULL,
+      product_id INTEGER NOT NULL,
+      quantity REAL NOT NULL,
+      unit_price REAL NOT NULL,
+      condition TEXT DEFAULT 'good'
+        CHECK(condition IN ('good','damaged','repair')),
+      restock INTEGER NOT NULL DEFAULT 1,
+      FOREIGN KEY (return_id) REFERENCES sales_returns(id) ON DELETE CASCADE,
+      FOREIGN KEY (invoice_item_id) REFERENCES invoice_items(id),
+      FOREIGN KEY (product_id) REFERENCES products(id)
+    );
+  `);
+
+  // ─── فهارس ───
+  run(`CREATE INDEX IF NOT EXISTS idx_invoices_customer  ON invoices(customer_id);`);
+  run(`CREATE INDEX IF NOT EXISTS idx_invoices_status    ON invoices(status);`);
+  run(`CREATE INDEX IF NOT EXISTS idx_invoices_date      ON invoices(invoice_date);`);
+  run(`CREATE INDEX IF NOT EXISTS idx_cust_pay_customer  ON customer_payments(customer_id);`);
+  run(`CREATE INDEX IF NOT EXISTS idx_cust_inst_due      ON customer_installments(due_date);`);
+  run(`CREATE INDEX IF NOT EXISTS idx_cust_inst_status   ON customer_installments(status);`);
+  run(`CREATE INDEX IF NOT EXISTS idx_returns_invoice    ON sales_returns(invoice_id);`);
+
+  console.log('✓ تم إنشاء جداول المرحلة الثالثة (المبيعات والعملاء)');
+}
+
+module.exports.createSalesSchema = createSalesSchema;

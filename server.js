@@ -5,7 +5,7 @@ const cors = require('cors');
 const path = require('path');
 
 const { initDatabase } = require('./src/db/database');
-const { createSchema, seedInitialData, createProcurementSchema } = require('./src/db/schema');
+const { createSchema, seedInitialData, createProcurementSchema, createSalesSchema } = require('./src/db/schema');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -16,6 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // تقديم الصور المرفوعة كملفات ثابتة
 app.use('/uploads', express.static(path.join(__dirname, 'src/uploads')));
+
 // تقديم الـ frontend (React build)
 const publicPath = path.join(__dirname, 'public');
 if (require('fs').existsSync(publicPath)) {
@@ -28,7 +29,6 @@ app.get('/api/health', (req, res) => {
 });
 
 // تسجيل المسارات (routes)
-
 app.use('/api/auth', require('./src/routes/auth'));
 app.use('/api/users', require('./src/routes/users'));
 app.use('/api/products', require('./src/routes/products'));
@@ -42,10 +42,21 @@ app.use('/api/purchase-orders', require('./src/routes/purchaseOrders'));
 app.use('/api/purchase-receipts', require('./src/routes/purchaseReceipts'));
 app.use('/api/supplier-payments', require('./src/routes/supplierPayments'));
 app.use('/api/installments', require('./src/routes/installments'));
+app.use('/api/customers', require('./src/routes/customers'));
+app.use('/api/invoices', require('./src/routes/invoices'));
+app.use('/api/invoices', require('./src/routes/invoicePdf'));
+app.use('/api/customer-payments', require('./src/routes/customerPayments'));
+app.use('/api/customer-installments', require('./src/routes/customerInstallments'));
+app.use('/api/sales-returns', require('./src/routes/salesReturns'));
 
 // التعامل مع المسارات غير الموجودة في الـ API
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'هذا المسار غير موجود' });
+});
+
+// صفحة طباعة الباركود المستقلة
+app.get('/barcode-print', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'barcode-print.html'));
 });
 
 // SPA Catch-all: أي مسار غير API يُخدَّم بـ index.html (لدعم React Router)
@@ -67,12 +78,13 @@ async function startServer() {
     await initDatabase();
     createSchema();
     createProcurementSchema();
+    createSalesSchema();
     seedInitialData();
 
     app.listen(PORT, '0.0.0.0', () => {
       console.log('═══════════════════════════════════════════');
       console.log(`✓ السيرفر يعمل على المنفذ ${PORT}`);
-      console.log(`✓ نظام نجف وإضاءة ERP - المرحلتان الأولى والثانية`);
+      console.log(`✓ نظام نجف وإضاءة ERP - المراحل الأولى والثانية والثالثة`);
       console.log('═══════════════════════════════════════════');
     });
   } catch (err) {

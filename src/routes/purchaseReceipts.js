@@ -124,9 +124,9 @@ router.post('/', authorize('admin','manager','warehouse'), (req, res) => {
       insert(`INSERT INTO stock_movements
         (product_id,location_id,movement_type,quantity,quantity_before,quantity_after,
          reference_type,reference_id,notes,user_id)
-        VALUES (?,?,'in',?,?,?,'purchase_receipt',?,'استلام بضاعة — إيصال '+?,?)`,
+        VALUES (?,?,'in',?,?,?,'purchase_receipt',?,?,?)`,
         [poItem.product_id, location_id, item.qty_received, before, after,
-         rId, receiptNumber, req.user.id]);
+         rId, `استلام بضاعة — إيصال ${receiptNumber}`, req.user.id]);
 
       // تحديث سعر التكلفة في جدول المنتجات (weighted average)
       const currentProduct = get(`SELECT cost_price FROM products WHERE id=?`,[poItem.product_id]);
