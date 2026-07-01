@@ -548,7 +548,27 @@ function createSalesSchema() {
   run(`CREATE INDEX IF NOT EXISTS idx_cust_inst_status   ON customer_installments(status);`);
   run(`CREATE INDEX IF NOT EXISTS idx_returns_invoice    ON sales_returns(invoice_id);`);
 
+  migrateSalesSchema();
+
   console.log('✓ تم إنشاء جداول المرحلة الثالثة (المبيعات والعملاء)');
+}
+
+// ─── ترحيلات (Migrations) خفيفة على جداول موجودة بالفعل ───
+// ملحوظة هندسية: المشروع ده بيستخدم sql.js (SQLite في الذاكرة) من غير أي أداة migration
+// حقيقية، فأي تعديل على عمود في جدول موجود لازم يتم بطريقة آمنة (idempotent) عن طريق
+// فحص PRAGMA table_info قبل أي ALTER TABLE، عشان السيرفر يقدر يعيد التشغيل من غير
+// ما يحاول يضيف نفس العمود مرتين ويرمي error.
+function migrateSalesSchema() {
+  const { all } = require('./database');
+  // بند الفاتورة: نضيف location_id عشان كل بند يقدر يتباع من مخزن مختلف عن باقي
+  // بنود نفس الفاتورة (دعم تعدد المخازن داخل فاتورة واحدة في نفس الوقت).
+  const itemCols = all(`PRAGMA table_info(invoice_items)`);
+  const hasLocationId = itemCols.some(c => c.name === 'location_id');
+  if (!hasLocationId) {
+    run(`ALTER TABLE invoice_items ADD COLUMN location_id INTEGER REFERENCES locations(id);`);
+    console.log('✓ ترحيل: تمت إضافة عمود location_id لجدول invoice_items');
+  }
+  run(`CREATE INDEX IF NOT EXISTS idx_invoice_items_location ON invoice_items(location_id);`);
 }
 
 module.exports.createSalesSchema = createSalesSchema;

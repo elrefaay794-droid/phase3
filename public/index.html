@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>الرفاعي للنجف والإضاءة — نظام ERP</title>
+<title>مؤسـسـة الرقـاعـي للنجف والاضاءة</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
@@ -1377,16 +1377,84 @@ tbody tr:hover { background: var(--ink-4); }
 }
 
 /* ── Audit Log Table ── */
-.audit-action-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: var(--r-full);
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+/* ── Invoice Line Cards (يحل مشكلة تضييق أعمدة الجدول على الموبايل) ──
+   كل بند بقى كارت مستقل بشبكة مرنة (CSS grid auto-fit)، فكل خانة بتاخد
+   مساحة كافية للكتابة فيها مهما كان عرض الشاشة، وعلى الشاشات الضيقة الحقول
+   بتتنقل تلقائياً لسطر جديد بدل ما تتضغط في عمود ضيق زي الجدول القديم. */
+.inv-line-card {
+  background: var(--ink-3);
+  border: 0.5px solid var(--gold-border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.inv-line-card-top {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.inv-line-card-top .form-control { flex: 1; }
+.inv-line-remove-btn {
+  flex-shrink: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-md); border: 0.5px solid rgba(255,255,255,0.1); background: transparent;
+  color: var(--cream-4); cursor: pointer; transition: all var(--t-fast);
+}
+.inv-line-remove-btn:hover { color: var(--danger); border-color: rgba(240,128,128,0.35); background: var(--danger-bg); }
+.inv-line-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 10px;
+}
+.inv-line-field label {
+  display: block; font-size: 0.66rem; color: var(--cream-4); letter-spacing: .04em;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+.inv-line-field .form-control { min-height: 40px; font-size: 0.92rem; padding: 9px 10px; text-align: center; }
+.inv-line-field-total { display: flex; flex-direction: column; justify-content: flex-end; }
+.inv-line-field-total .il-total-value {
+  min-height: 40px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-weight: 700; font-size: 0.95rem; color: var(--gold-0);
+  background: var(--ink-4); border-radius: var(--r-md); border: 0.5px solid rgba(255,255,255,0.06);
+}
+
+
+.loc-picker { position: relative; width: 100%; }
+.loc-picker-btn {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  gap: 6px; cursor: pointer; text-align: right; font-family: var(--font-body);
+}
+.loc-picker-btn .lp-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.82rem; }
+.loc-picker-btn .lp-avail { font-size: 0.68rem; font-family: var(--font-mono); flex-shrink: 0; }
+.loc-picker-btn .lp-avail.ok   { color: var(--success); }
+.loc-picker-btn .lp-avail.bad  { color: var(--danger); }
+.loc-picker-btn .lp-avail.none { color: var(--cream-4); }
+.loc-picker-btn.empty .lp-label { color: var(--cream-4); }
+.loc-picker-btn svg.lp-chev { flex-shrink: 0; transition: transform var(--t-fast) var(--ease-smooth); opacity: .6; }
+.loc-picker.open .lp-chev { transform: rotate(180deg); }
+.loc-picker-menu {
+  position: absolute; z-index: 60; top: calc(100% + 4px); right: 0; left: 0;
+  background: var(--ink-3); border: 0.5px solid var(--gold-border); border-radius: var(--r-md);
+  box-shadow: var(--shadow-float); overflow: hidden; max-height: 240px; overflow-y: auto;
+}
+.loc-opt {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 12px; font-size: 0.8rem; cursor: pointer; border-bottom: 0.5px solid rgba(255,255,255,0.04);
+  transition: background var(--t-fast);
+}
+.loc-opt:last-child { border-bottom: none; }
+.loc-opt:hover:not(.disabled) { background: var(--gold-glow-sm); }
+.loc-opt.selected { background: var(--gold-glow-sm); }
+.loc-opt.selected .loc-opt-name { color: var(--gold-0); font-weight: 700; }
+.loc-opt.disabled { cursor: not-allowed; opacity: .55; }
+.loc-opt-name { color: var(--cream-1); }
+.loc-opt-avail { font-family: var(--font-mono); font-size: 0.7rem; padding: 2px 7px; border-radius: var(--r-full); flex-shrink: 0; white-space: nowrap; }
+.loc-opt-avail.ok  { color: var(--success); background: var(--success-bg); }
+.loc-opt-avail.bad { color: var(--danger);  background: var(--danger-bg); }
+.line-loc-warn { font-size: 0.68rem; color: var(--danger); margin-top: 3px; }
+
+/* ── Draft invoice action bar (edit/cancel) inside detail modal ── */
+.draft-edit-banner {
+  margin-top: var(--s-md); padding: 10px 14px; border-radius: var(--r-md);
+  background: var(--warn-bg); border: 0.5px solid rgba(240,196,122,0.35);
+  display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--warn);
 }
 </style>
 </head>
@@ -1471,7 +1539,7 @@ tbody tr:hover { background: var(--ink-4); }
     </button>
 
     <div style="text-align:center; margin-top: var(--s-lg); font-size: 0.72rem; color: var(--cream-4);">
-      الرفاعي للنجف والإضاءة &copy; 2025 · جميع الحقوق محفوظة
+      مؤسـسـة الرقـاعـي للنجف والاضاءة  &copy; 2026 · جميع الحقوق محفوظة
     </div>
   </div>
 </div>
@@ -1518,7 +1586,7 @@ tbody tr:hover { background: var(--ink-4); }
           <div class="brand-name shimmer">الرفاعي</div>
         </div>
       </div>
-      <div class="brand-tagline">للنجف والإضاءة · نظام ERP</div>
+      <div class="brand-tagline">للنجف والإضاءة · نظام الادارة</div>
     </div>
 
     <!-- NEW refined logo mark — inspired by real brand logo: gold Arabic script + chandelier -->
@@ -1913,13 +1981,14 @@ tbody tr:hover { background: var(--ink-4); }
                 <th>الاسم</th>
                 <th>اسم المستخدم</th>
                 <th>الدور</th>
+                <th>المواقع المسموح بها</th>
                 <th>يرى سعر التكلفة</th>
                 <th>الحالة</th>
                 <th style="width:80px;"></th>
               </tr>
             </thead>
             <tbody id="usersTbody">
-              <tr><td colspan="6"><div class="empty-state"><div class="spinner" style="margin:auto"></div></div></td></tr>
+              <tr><td colspan="7"><div class="empty-state"><div class="spinner" style="margin:auto"></div></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -2779,7 +2848,7 @@ tbody tr:hover { background: var(--ink-4); }
         </div>
         <div class="form-group">
           <label class="form-label">الدور</label>
-          <select class="form-control" id="uRole">
+          <select class="form-control" id="uRole" onchange="onUserRoleChange()">
             <option value="warehouse">مستودع</option>
             <option value="sales">مبيعات</option>
             <option value="manager">مدير</option>
@@ -2788,7 +2857,37 @@ tbody tr:hover { background: var(--ink-4); }
           <span class="field-hint">يحدد صلاحيات المستخدم والصفحات اللي يقدر يشوفها أو يعدّل فيها.</span>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:var(--s-md);">
+
+      <!-- ─── صلاحيات المواقع ─── -->
+      <div id="uLocPermsSection" style="margin-top:14px;padding:14px 16px;background:var(--surface-2);border-radius:8px;border:1px solid var(--border);">
+        <div style="font-size:0.82rem;font-weight:700;color:var(--cream-1);margin-bottom:10px;display:flex;align-items:center;gap:8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          صلاحيات المواقع والمستودعات
+        </div>
+        <!-- نوع الصلاحية: الكل أو محدد -->
+        <div style="display:flex;gap:16px;margin-bottom:12px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--cream-2);">
+            <input type="radio" name="uLocType" id="uLocAll" value="all" checked
+              style="accent-color:var(--gold-1);" onchange="onLocTypeChange()"/>
+            <span>كل المواقع (بدون قيود)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--cream-2);">
+            <input type="radio" name="uLocType" id="uLocSpecific" value="specific"
+              style="accent-color:var(--gold-1);" onchange="onLocTypeChange()"/>
+            <span>مواقع محددة فقط</span>
+          </label>
+        </div>
+        <!-- قائمة المواقع — تظهر لما يختار "محدد" -->
+        <div id="uLocCheckboxes" style="display:none;margin-top:4px;">
+          <div id="uLocCheckboxList" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+          <span class="field-hint" style="margin-top:6px;display:block;">المستخدم ميشوفش أي شيء عن المواقع التانية — مخزون، فواتير، تقارير — أي حاجة خارج المواقع المحددة هنا.</span>
+        </div>
+        <div id="uLocAllNote" style="font-size:0.78rem;color:var(--muted);margin-top:4px;">
+          المستخدم هيشوف ويتعامل مع كل المستودعات وصالات العرض بدون قيود.
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:var(--s-md);margin-top:14px;">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:var(--cream-3);">
           <input type="checkbox" id="uCanViewCost" style="accent-color:var(--gold-1);"/>
           يرى سعر التكلفة
@@ -3321,7 +3420,10 @@ function navigate(page, entity = null) {
   if (page === 'transfers') loadTransfers();
   if (page === 'locations') renderLocations();
   if (page === 'categories') renderCategories();
-  if (page === 'users') loadUsers();
+  if (page === 'users') {
+    if (!state.locations || state.locations.length === 0) loadLocations();
+    loadUsers();
+  }
   if (page === 'auditlog') loadAuditLog();
   if (page === 'movements') loadMovements();
   if (page === 'suppliers') loadSuppliers();
@@ -4197,23 +4299,82 @@ async function loadUsers() {
 }
 
 function renderUsers() {
-  const roleNames = { admin: 'مسؤول النظام', manager: 'مدير', sales: 'مبيعات', warehouse: 'مستودع' };
-  const roleBadges = { admin: 'badge-gold', manager: 'badge-warn', sales: 'badge-info', warehouse: 'badge-muted' };
+  const roleNames  = { admin:'مسؤول النظام', manager:'مدير', sales:'مبيعات', warehouse:'مستودع' };
+  const roleBadges = { admin:'badge-gold', manager:'badge-warn', sales:'badge-info', warehouse:'badge-muted' };
+  const typeIcon   = { warehouse:'🏭', showroom:'🏪', store:'🛒' };
   const tbody = document.getElementById('usersTbody');
   if (state.users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">👤</div><div class="empty-title">لا توجد مستخدمون</div></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">👤</div><div class="empty-title">لا توجد مستخدمون</div></div></td></tr>';
     return;
   }
-  tbody.innerHTML = state.users.map(u => `
+  tbody.innerHTML = state.users.map(u => {
+    // بناء تسمية المواقع المسموح بها
+    let locLabel;
+    if (u.role === 'admin' || !u.allowed_location_ids || u.allowed_location_ids.length === 0) {
+      locLabel = '<span class="badge badge-gold" style="font-size:0.7rem;">كل المواقع</span>';
+    } else {
+      const names = u.allowed_location_ids.map(lid => {
+        const loc = state.locations.find(l => l.id === lid);
+        return loc ? `<span class="badge badge-muted" style="font-size:0.7rem;">${typeIcon[loc.type]||'📍'} ${loc.name}</span>` : '';
+      }).filter(Boolean).join(' ');
+      locLabel = names || '<span class="badge badge-muted" style="font-size:0.7rem;">—</span>';
+    }
+    return `
     <tr>
       <td style="font-weight:600;color:var(--cream-0);">${u.full_name}</td>
       <td><span class="mono">${u.username}</span></td>
       <td><span class="badge ${roleBadges[u.role] || 'badge-muted'}">${roleNames[u.role] || u.role}</span></td>
+      <td>${locLabel}</td>
       <td>${u.can_view_cost_price ? '<span class="badge badge-success">نعم</span>' : '<span class="badge badge-muted">لا</span>'}</td>
       <td><span class="badge ${u.is_active ? 'badge-success' : 'badge-muted'}">${u.is_active ? 'نشط' : 'غير نشط'}</span></td>
       <td><button class="btn btn-xs btn-subtle" onclick="editUser(${u.id})">تعديل</button></td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
+}
+
+// ── بناء قائمة checkboxes المواقع داخل المودال ──
+function buildLocCheckboxes(selectedIds = []) {
+  const list = document.getElementById('uLocCheckboxList');
+  if (!list) return;
+  const locs = state.locations.filter(l => l.is_active !== false);
+  const typeIcon = { warehouse:'🏭', showroom:'🏪', store:'🛒' };
+  list.innerHTML = locs.map(l => `
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 10px;border-radius:6px;background:var(--surface-1);border:1px solid var(--border);">
+      <input type="checkbox" class="uLocChk" value="${l.id}"
+        style="accent-color:var(--gold-1);"
+        ${selectedIds.includes(l.id) ? 'checked' : ''}/>
+      <span style="font-size:0.82rem;">${typeIcon[l.type]||'📍'} ${l.name}</span>
+    </label>`).join('');
+}
+
+// ── دالة تشغّل لما يتغير الدور ──
+function onUserRoleChange() {
+  const role = document.getElementById('uRole').value;
+  const section = document.getElementById('uLocPermsSection');
+  if (role === 'admin') {
+    // Admin دائماً يشوف الكل — نخفي قسم المواقع
+    section.style.opacity = '0.45';
+    section.style.pointerEvents = 'none';
+    document.getElementById('uLocAll').checked = true;
+    onLocTypeChange();
+  } else {
+    section.style.opacity = '1';
+    section.style.pointerEvents = 'auto';
+  }
+}
+
+// ── دالة تشغّل لما يتغير نوع الصلاحية (الكل / محدد) ──
+function onLocTypeChange() {
+  const isSpecific = document.getElementById('uLocSpecific').checked;
+  document.getElementById('uLocCheckboxes').style.display = isSpecific ? 'block' : 'none';
+  document.getElementById('uLocAllNote').style.display    = isSpecific ? 'none'  : 'block';
+}
+
+// ── جمع المواقع المحددة من checkboxes ──
+function getSelectedLocIds() {
+  const isSpecific = document.getElementById('uLocSpecific').checked;
+  if (!isSpecific) return []; // فاضي = الكل
+  return [...document.querySelectorAll('.uLocChk:checked')].map(el => Number(el.value));
 }
 
 function openUserModal() {
@@ -4225,6 +4386,11 @@ function openUserModal() {
   document.getElementById('uCanViewCost').checked = false;
   document.getElementById('uIsActive').checked = true;
   document.getElementById('userModalTitle').textContent = 'مستخدم جديد';
+  // reset location section
+  document.getElementById('uLocAll').checked = true;
+  onLocTypeChange();
+  buildLocCheckboxes([]);
+  onUserRoleChange();
   openModal('userModal');
 }
 
@@ -4239,30 +4405,46 @@ function editUser(id) {
   document.getElementById('uCanViewCost').checked = !!u.can_view_cost_price;
   document.getElementById('uIsActive').checked = !!u.is_active;
   document.getElementById('userModalTitle').textContent = 'تعديل مستخدم';
+  // location permissions
+  const locIds = u.allowed_location_ids || [];
+  if (u.role === 'admin' || locIds.length === 0) {
+    document.getElementById('uLocAll').checked = true;
+    buildLocCheckboxes([]);
+  } else {
+    document.getElementById('uLocSpecific').checked = true;
+    buildLocCheckboxes(locIds);
+  }
+  onLocTypeChange();
+  onUserRoleChange();
   openModal('userModal');
 }
 
 async function saveUser() {
   const id = document.getElementById('uId').value;
   const body = {
-    full_name: document.getElementById('uFullName').value.trim(),
-    username: document.getElementById('uUsername').value.trim(),
-    role: document.getElementById('uRole').value,
+    full_name:          document.getElementById('uFullName').value.trim(),
+    username:           document.getElementById('uUsername').value.trim(),
+    role:               document.getElementById('uRole').value,
     can_view_cost_price: document.getElementById('uCanViewCost').checked,
-    is_active: document.getElementById('uIsActive').checked,
+    is_active:          document.getElementById('uIsActive').checked,
+    allowed_location_ids: getSelectedLocIds(),
   };
   const pw = document.getElementById('uPassword').value;
   if (pw) body.password = pw;
-  if (!id && !pw) { toast('كلمة المرور مطلوبة للمستخدم الجديد', 'danger'); return; }
+  if (!id && !pw)          { toast('كلمة المرور مطلوبة للمستخدم الجديد', 'danger'); return; }
   if (!body.full_name || !body.username) { toast('الاسم واسم المستخدم مطلوبان', 'danger'); return; }
+  if (body.role !== 'admin' && document.getElementById('uLocSpecific').checked
+      && body.allowed_location_ids.length === 0) {
+    toast('لازم تختار موقع واحد على الأقل أو تختار "كل المواقع"', 'danger'); return;
+  }
 
   try {
     if (id) {
       await API.put(`/users/${id}`, body);
-      toast('تم تحديث المستخدم');
+      toast('تم تحديث المستخدم ✓');
     } else {
       await API.post('/users', body);
-      toast('تم إضافة المستخدم');
+      toast('تم إضافة المستخدم ✓');
     }
     closeModal('userModal');
     loadUsers();
@@ -4702,6 +4884,11 @@ function addPOItem() {
   list.appendChild(row);
 }
 
+// _poCurrentTotal: نفس مبدأ إصلاح فاتورة المبيعات — نخزّن الإجمالي كرقم خام بدل
+// ما نحاول نعيد قراءته من نص متنسّق بـ toLocaleString('ar-EG')، اللي بيطبع أرقام
+// هندية عربية على بعض المتصفحات ويكسر أي regex بيدوّر على أرقام إنجليزية 0-9.
+let _poCurrentTotal = 0;
+
 function recalcPO() {
   const rows = document.querySelectorAll('#poItemsList > div');
   let subtotal = 0;
@@ -4717,6 +4904,7 @@ function recalcPO() {
   });
   const tax = parseFloat(document.getElementById('poTaxPct').value) || 0;
   const total = subtotal * (1 + tax / 100);
+  _poCurrentTotal = total;
   document.getElementById('poSubtotalDisp').textContent = fmt(subtotal) + ' ج.م';
   document.getElementById('poTotalDisp').textContent = fmt(total) + ' ج.م';
   buildInstallmentPreview();
@@ -4725,7 +4913,7 @@ function recalcPO() {
 function buildInstallmentPreview() {
   const count = parseInt(document.getElementById('poInstallCount').value) || 0;
   const startDate = document.getElementById('poInstallStart').value;
-  const total = parseFloat(document.getElementById('poTotalDisp').textContent.replace(/[^0-9.]/g,'')) || 0;
+  const total = _poCurrentTotal || 0;
   const preview = document.getElementById('poInstallPreview');
   if (!count || !startDate || !total) { preview.innerHTML = ''; return; }
   const perInstall = total / count;
@@ -5796,25 +5984,58 @@ function renderInvoices(list) {
           <button class="btn btn-xs" onclick="openWhatsAppShareModal(${inv.id})" title="مشاركة واتساب" style="background:rgba(37,211,102,.12);border:.5px solid rgba(37,211,102,.3);color:#25D366;padding:4px 8px;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           </button>
+          ${inv.status==='draft'?`<button class="btn btn-xs btn-subtle" onclick="editInvoice(${inv.id})" title="تعديل الفاتورة">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>`:''}
           ${inv.status==='draft'?`<button class="btn btn-xs btn-primary" onclick="confirmInvoice(${inv.id})" title="تأكيد الفاتورة" style="padding:4px 10px;">✓</button>`:''}
         </div>
       </td>
     </tr>`).join('');
 }
 
-async function openInvoiceModal(presetCustomerId = null) {
-  // جلب العملاء والمنتجات والمواقع
-  let customers = [], products = [], locations = [];
+// _invoiceEditId: لو null إحنا بنعمل فاتورة جديدة، لو فيه رقم إحنا بنعدّل فاتورة مسودة موجودة بالفعل.
+let _invoiceEditId = null;
+// خريطة المخزون المتاح لكل منتج في كل مخزن: { product_id: { location_id: quantity } }
+let _stockMap = {};
+// المخازن النشطة المسموح للمستخدم يبيع منها
+let _invLocationsList = [];
+// المخزن المختار لكل بند في الفاتورة الحالية: { lineId: location_id|null }
+let _invoiceLineLocation = {};
+
+async function openInvoiceModal(presetCustomerId = null, editInvoiceId = null) {
+  // جلب العملاء والمنتجات والمواقع ومستوى المخزون الحالي في كل مخزن
+  let customers = [], products = [], locations = [], inventory = [];
+  let editInvoice = null, editItems = [], editInstallments = [];
   try {
-    [{ customers }, { products }, { locations }] = await Promise.all([
+    const tasks = [
       API.get('/customers?is_active=true'),
       API.get('/products'),
       API.get('/locations'),
-    ]);
+      API.get('/inventory/overview'),
+    ];
+    if (editInvoiceId) tasks.push(API.get(`/invoices/${editInvoiceId}`));
+    const results = await Promise.all(tasks);
+    ({ customers } = results[0]); ({ products } = results[1]);
+    ({ locations } = results[2]); ({ inventory } = results[3]);
+    if (editInvoiceId) {
+      const editData = results[4];
+      if (editData.invoice.status !== 'draft') { toast('لا يمكن تعديل فاتورة بعد تأكيدها','danger'); return; }
+      editInvoice = editData.invoice; editItems = editData.items || []; editInstallments = editData.installments || [];
+    }
   } catch(e) { toast(e.message,'danger'); return; }
 
-  const custOpts = customers.map(c => `<option value="${c.id}" data-discount="${c.discount_pct||0}" ${c.id==presetCustomerId?'selected':''}>${c.name}</option>`).join('');
-  const locOpts  = locations.filter(l=>l.is_active).map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  _invoiceEditId = editInvoiceId || null;
+  _stockMap = {};
+  inventory.forEach(r => {
+    if (!_stockMap[r.product_id]) _stockMap[r.product_id] = {};
+    _stockMap[r.product_id][r.location_id] = r.quantity;
+  });
+  _invLocationsList = locations.filter(l=>l.is_active);
+  _invoiceCurrentTotal = 0;
+  _invoiceLineLocation = {};
+
+  const presetCust = editInvoice ? editInvoice.customer_id : presetCustomerId;
+  const custOpts = customers.map(c => `<option value="${c.id}" data-discount="${c.discount_pct||0}" ${c.id==presetCust?'selected':''}>${c.name}</option>`).join('');
   // ملحوظة هندسية: قائمة المنتجات بتُخزَّن في متغيّر عام (_invoiceProdOptsHtml) مش تتمرّر كنص
   // جوه onclick — تمرير HTML طويل فيه علامات تنصيص داخل خاصية onclick بيكسر الـ attribute
   // عند أول علامة تنصيص ويسرّب الباقي كنص خام على الصفحة (وهو السبب في ظهور شريط أسماء
@@ -5822,35 +6043,35 @@ async function openInvoiceModal(presetCustomerId = null) {
   _invoiceProdOptsHtml = `<option value="">اختر المنتج...</option>` +
     products.map(p => `<option value="${p.id}" data-price="${p.sale_price}" data-name="${p.name.replace(/"/g,'&quot;')}">${p.name}</option>`).join('');
 
+  const isEdit = !!_invoiceEditId;
+  const payType = editInvoice?.payment_type || 'cash';
+
   const html = `
     <div class="modal-overlay open" id="invoiceFormModal" data-dynamic="true" onclick="if(event.target===this)closeModal('invoiceFormModal')">
-      <div class="modal" style="max-width:860px;width:95%;">
+      <div class="modal" style="max-width:920px;width:95%;">
         <div class="modal-header">
-          <div class="modal-title">فاتورة بيع جديدة</div>
+          <div class="modal-title">${isEdit ? `تعديل فاتورة مسودة — ${editInvoice.invoice_number}` : 'فاتورة بيع جديدة'}</div>
           <button class="modal-close" onclick="closeModal('invoiceFormModal')">✕</button>
         </div>
         <div class="modal-body">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--s-md);margin-bottom:var(--s-lg);">
-            <div class="form-group"><label class="form-label">العميل *</label><select class="form-control" id="ifCustomer" onchange="onInvoiceCustomerChange()">${custOpts}</select><span class="field-hint">خصمه الافتراضي بيُطبَّق تلقائياً على كل البنود.</span></div>
-            <div class="form-group"><label class="form-label">الموقع *</label><select class="form-control" id="ifLocation">${locOpts}</select><span class="field-hint">الموقع اللي هيتم البيع منه ويُخصم المخزون منه.</span></div>
-            <div class="form-group"><label class="form-label">تاريخ الفاتورة</label><input class="form-control" type="date" id="ifDate" value="${new Date().toISOString().split('T')[0]}"></div>
+            <div class="form-group"><label class="form-label">العميل *</label><select class="form-control" id="ifCustomer" onchange="onInvoiceCustomerChange()">${custOpts}</select><span class="field-hint">خصمه الافتراضي بيُطبَّق تلقائياً على البنود الجديدة.</span></div>
+            <div class="form-group"><label class="form-label">تاريخ الفاتورة</label><input class="form-control" type="date" id="ifDate" value="${editInvoice?.invoice_date || new Date().toISOString().split('T')[0]}"></div>
             <div class="form-group"><label class="form-label">نوع الدفع</label>
               <select class="form-control" id="ifPayType" onchange="toggleInvoiceInstallSection()">
-                <option value="cash">نقداً</option><option value="credit">آجل</option><option value="installment">تقسيط</option>
+                <option value="cash" ${payType==='cash'?'selected':''}>نقداً</option><option value="credit" ${payType==='credit'?'selected':''}>آجل</option><option value="installment" ${payType==='installment'?'selected':''}>تقسيط</option>
               </select>
               <span class="field-hint">"آجل" يسجَّل كمديونية كاملة على العميل، و"تقسيط" يفتح جدول أقساط مرتبط بالفاتورة.</span></div>
-            <div class="form-group"><label class="form-label">خصم إجمالي (ج.م)</label><input class="form-control" type="number" id="ifDiscAmt" value="0" min="0" oninput="calcInvoiceTotals()"><span class="field-hint">خصم بالجنيه على إجمالي الفاتورة، بعد خصومات البنود.</span></div>
-            <div class="form-group"><label class="form-label">ضريبة %</label><input class="form-control" type="number" id="ifTaxPct" value="0" min="0" oninput="calcInvoiceTotals()"></div>
+            <div class="form-group"><label class="form-label">خصم إجمالي (ج.م)</label><input class="form-control" type="number" id="ifDiscAmt" value="${editInvoice?.discount_amount || 0}" min="0" oninput="calcInvoiceTotals()"><span class="field-hint">خصم بالجنيه على إجمالي الفاتورة، بعد خصومات البنود.</span></div>
+            <div class="form-group"><label class="form-label">ضريبة %</label><input class="form-control" type="number" id="ifTaxPct" value="${editInvoice?.tax_pct || 0}" min="0" oninput="calcInvoiceTotals()"></div>
           </div>
 
           <!-- بنود الفاتورة -->
-          <div style="font-size:12px;color:var(--cream-4);letter-spacing:.1em;text-transform:uppercase;margin-bottom:var(--s-sm);">البنود</div>
-          <div style="overflow-x:auto;margin-bottom:var(--s-sm);">
-            <table style="min-width:600px;">
-              <thead><tr><th>المنتج</th><th style="width:80px;">الكمية</th><th style="width:110px;">سعر الوحدة</th><th style="width:80px;">خصم%</th><th style="width:100px;">الإجمالي</th><th style="width:36px;"></th></tr></thead>
-              <tbody id="invoiceLines"></tbody>
-            </table>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:var(--s-sm);flex-wrap:wrap;gap:4px;">
+            <div style="font-size:12px;color:var(--cream-4);letter-spacing:.1em;text-transform:uppercase;">البنود</div>
+            <div style="font-size:11px;color:var(--cream-4);">اختر مخزن كل منتج على حدة — هتلاقي بس المخازن اللي فيها كمية كافية متاحة للاختيار</div>
           </div>
+          <div id="invoiceLines" style="margin-bottom:var(--s-sm);"></div>
           <button class="btn btn-ghost btn-sm mb-lg" onclick="addInvoiceLine()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             إضافة منتج
@@ -5896,26 +6117,42 @@ async function openInvoiceModal(presetCustomerId = null) {
             </div>
           </div>
 
-          <div class="form-group" style="margin-top:var(--s-md);"><label class="form-label">ملاحظات</label><textarea class="form-control" id="ifNotes" rows="2" placeholder="اختياري"></textarea></div>
+          <div class="form-group" style="margin-top:var(--s-md);"><label class="form-label">ملاحظات</label><textarea class="form-control" id="ifNotes" rows="2" placeholder="اختياري">${editInvoice?.notes || ''}</textarea></div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-ghost" onclick="closeModal('invoiceFormModal')">إلغاء</button>
-          <button class="btn btn-subtle" onclick="saveInvoice('draft')">حفظ كمسودة</button>
-          <button class="btn btn-primary" onclick="saveInvoice('confirmed')">تأكيد وإصدار</button>
+          <button class="btn btn-subtle" onclick="saveInvoice('draft')">${isEdit ? 'حفظ التعديلات' : 'حفظ كمسودة'}</button>
+          <button class="btn btn-primary" onclick="saveInvoice('confirmed')">${isEdit ? 'حفظ وتأكيد' : 'تأكيد وإصدار'}</button>
         </div>
       </div>
     </div>`;
   mountDynamicModal(html, 'invoiceFormModal');
-  _invInstallMode = 'auto';
-  _invManualInstallRows = [];
-  addInvoiceLine();
+
+  if (isEdit && payType === 'installment' && editInstallments.length) {
+    _invInstallMode = 'manual';
+    _invManualInstallRows = editInstallments.map(i => ({ amount: i.amount, due_date: i.due_date }));
+  } else {
+    _invInstallMode = 'auto';
+    _invManualInstallRows = [];
+  }
+
+  if (isEdit && editItems.length) {
+    editItems.forEach(it => addInvoiceLine({
+      product_id: it.product_id, quantity: it.quantity, unit_price: it.unit_price,
+      discount_pct: it.discount_pct, location_id: it.location_id,
+    }));
+  } else {
+    addInvoiceLine();
+  }
+
+  if (isEdit && payType === 'installment') toggleInvoiceInstallSection();
 }
 
 // لما يتغيّر العميل، يتطبّق خصمه الافتراضي تلقائياً على كل البنود الموجودة والجديدة
 function onInvoiceCustomerChange() {
   const sel = document.getElementById('ifCustomer');
   const discount = parseFloat(sel.options[sel.selectedIndex]?.dataset?.discount) || 0;
-  document.querySelectorAll('#invoiceLines tr').forEach(tr => {
+  document.querySelectorAll('#invoiceLines .inv-line-card').forEach(tr => {
     const idMatch = tr.id.match(/invLine(\d+)/);
     if (!idMatch) return;
     const discInput = document.getElementById(`ilDisc${idMatch[1]}`);
@@ -5926,22 +6163,179 @@ function onInvoiceCustomerChange() {
 
 let _invoiceLineId = 0;
 let _invoiceProdOptsHtml = '';
+
+// ── منتقي المخزن الخاص بكل بند: زرار بيفتح قائمة بكل المخازن، المتاح منها فعلاً
+//    (متوفر فيه كمية ≥ الكمية المطلوبة) قابل للاختيار، والباقي يبان بس بشارة حمراء
+//    توضح المتاح الفعلي (أو "غير متوفر" لو صفر) من غير ما يكون قابل للاختيار. ──
+function locPickerCellHtml(id) {
+  return `
+    <div class="loc-picker" id="locPicker${id}">
+      <button type="button" class="form-control loc-picker-btn empty" id="locPickerBtn${id}" onclick="toggleLocPicker(${id})" disabled>
+        <span class="lp-label" id="locPickerLabel${id}">اختر المنتج أولاً</span>
+        <svg class="lp-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="loc-picker-menu" id="locPickerMenu${id}" style="display:none;"></div>
+    </div>
+    <div class="line-loc-warn" id="locPickerWarn${id}" style="display:none;">⚠ المخزن المختار لم يعد كافياً — اختر مخزناً آخر</div>`;
+}
+
+function toggleLocPicker(id) {
+  const menu = document.getElementById(`locPickerMenu${id}`);
+  if (!menu) return;
+  const wasOpen = menu.style.display !== 'none';
+  closeAllLocPickers();
+  if (!wasOpen) {
+    renderLocPickerMenu(id);
+    menu.style.display = 'block';
+    document.getElementById(`locPicker${id}`)?.classList.add('open');
+  }
+}
+
+function closeAllLocPickers() {
+  document.querySelectorAll('.loc-picker-menu').forEach(m => m.style.display = 'none');
+  document.querySelectorAll('.loc-picker').forEach(p => p.classList.remove('open'));
+}
+
+// إغلاق أي قائمة مخازن مفتوحة لو المستخدم ضغط في أي مكان تاني بالصفحة
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.loc-picker')) closeAllLocPickers();
+});
+
+function getLineProductId(id) {
+  const sel = document.getElementById(`ilProd${id}`);
+  return sel ? parseInt(sel.value)||0 : 0;
+}
+function getLineQty(id) {
+  return parseFloat(document.getElementById(`ilQty${id}`)?.value) || 0;
+}
+
+function renderLocPickerMenu(id) {
+  const menu = document.getElementById(`locPickerMenu${id}`);
+  if (!menu) return;
+  const pid = getLineProductId(id);
+  const qty = getLineQty(id) || 0;
+  const stockByLoc = _stockMap[pid] || {};
+  const selected = _invoiceLineLocation[id];
+  if (!_invLocationsList.length) { menu.innerHTML = `<div class="loc-opt disabled"><span class="loc-opt-name">لا توجد مخازن متاحة</span></div>`; return; }
+  menu.innerHTML = _invLocationsList.map(loc => {
+    const avail = stockByLoc[loc.id] || 0;
+    const enough = qty > 0 && avail >= qty;
+    const isSel = selected === loc.id;
+    const safeName = loc.name.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    return `<div class="loc-opt ${enough?'':'disabled'} ${isSel?'selected':''}" ${enough?`onclick="selectInvoiceLineLocation(${id},${loc.id},'${safeName}')"`:''}>
+      <span class="loc-opt-name">${loc.name}</span>
+      <span class="loc-opt-avail ${enough?'ok':'bad'}">${avail>0?`متاح ${fmtN(avail)}${enough?'':' فقط'}`:'غير متوفر'}</span>
+    </div>`;
+  }).join('');
+}
+
+function selectInvoiceLineLocation(id, locationId) {
+  _invoiceLineLocation[id] = locationId;
+  closeAllLocPickers();
+  refreshLocPickerLabel(id);
+}
+
+function refreshLocPickerLabel(id) {
+  const btn = document.getElementById(`locPickerBtn${id}`);
+  const label = document.getElementById(`locPickerLabel${id}`);
+  const warn = document.getElementById(`locPickerWarn${id}`);
+  if (!btn || !label) return;
+  const pid = getLineProductId(id);
+  if (!pid) {
+    btn.disabled = true; btn.classList.add('empty');
+    label.textContent = 'اختر المنتج أولاً';
+    if (warn) warn.style.display = 'none';
+    return;
+  }
+  btn.disabled = false; btn.classList.remove('empty');
+  const locId = _invoiceLineLocation[id];
+  const existingBadge = btn.querySelector('.lp-avail'); if (existingBadge) existingBadge.remove();
+  if (locId) {
+    const loc = _invLocationsList.find(l => l.id === locId);
+    const qty = getLineQty(id) || 0;
+    const avail = (_stockMap[pid]||{})[locId] || 0;
+    const enough = avail >= qty;
+    label.textContent = loc ? loc.name : '—';
+    const badge = document.createElement('span');
+    badge.className = `lp-avail ${enough?'ok':'bad'}`;
+    badge.textContent = enough ? `✓ ${fmtN(avail)}` : `⚠ ${fmtN(avail)} فقط`;
+    btn.insertBefore(badge, btn.querySelector('.lp-chev'));
+    if (warn) warn.style.display = enough ? 'none' : 'block';
+  } else {
+    label.textContent = 'اختر المخزن...';
+    if (warn) warn.style.display = 'none';
+  }
+}
+
+// بيتنادى كل ما المنتج أو الكمية يتغيّروا في أي بند — لو المخزن المختار حالياً بقى
+// مش كافي للكمية الجديدة، بنمسح الاختيار صراحةً ونطلب من المستخدم يختار مخزن تاني
+// (عمداً من غير اختيار تلقائي لمخزن بديل، عشان المستخدم يكون واعي بالتغيير).
+function onInvoiceLineAvailabilityChange(id) {
+  const pid = getLineProductId(id);
+  const qty = getLineQty(id);
+  const locId = _invoiceLineLocation[id];
+  if (locId) {
+    const avail = (_stockMap[pid]||{})[locId] || 0;
+    if (avail < qty) _invoiceLineLocation[id] = null;
+  }
+  refreshLocPickerLabel(id);
+}
+
 // كل سطر منتج جديد بيبدأ فاضي ("اختر المنتج...") من غير أي منتج أو سعر مُختار مسبقاً —
 // عمداً، عشان مايحصلش إضافة منتج غلط للفاتورة بالغلط من غير ما المستخدم يلاحظ.
-function addInvoiceLine() {
+// بارامتر prefill اختياري بيُستخدم وقت تعديل فاتورة مسودة موجودة، عشان نملأ البند
+// ببيانات البند المحفوظة بالفعل (منتج + كمية + سعر + خصم + المخزن).
+//
+// ملحوظة هندسية: البند بقى "كارت" (div بشبكة CSS grid مرنة) بدل صف في جدول تقليدي.
+// السبب: أعمدة الجدول التقليدي بعرض ثابت صغير (زي 70px للكمية والخصم) بتتضيّق جداً
+// على شاشات الموبايل الضيقة لدرجة إن الرقم اللي بيتكتب في الخانة مابيبقاش ظاهر —
+// وده اللي كان بيحصل بالظبط. الكارت بيدي كل حقل مساحة أدنى مريحة (auto-fit minmax)
+// وبيلف الحقول على أكتر من سطر تلقائياً بدل ما يضغطها في عمود ضيق.
+function addInvoiceLine(prefill = null) {
   const id = ++_invoiceLineId;
   const custSel = document.getElementById('ifCustomer');
-  const defaultDiscount = parseFloat(custSel?.options?.[custSel.selectedIndex]?.dataset?.discount) || 0;
-  const tr = document.createElement('tr');
-  tr.id = `invLine${id}`;
-  tr.innerHTML = `
-    <td><select class="form-control" id="ilProd${id}" onchange="onInvoiceProdChange(${id})" style="width:100%;">${_invoiceProdOptsHtml}</select></td>
-    <td><input class="form-control" type="number" id="ilQty${id}" value="1" min="0.001" step="any" oninput="calcInvoiceTotals()"></td>
-    <td><input class="form-control" type="number" id="ilPrice${id}" value="0" min="0" step="any" oninput="calcInvoiceTotals()"></td>
-    <td><input class="form-control" type="number" id="ilDisc${id}" value="${defaultDiscount}" min="0" max="100" oninput="calcInvoiceTotals()"></td>
-    <td style="font-family:var(--font-mono);text-align:center;" id="ilTotal${id}">0.00</td>
-    <td><button class="btn btn-xs btn-subtle" onclick="document.getElementById('invLine${id}').remove();calcInvoiceTotals();">✕</button></td>`;
-  document.getElementById('invoiceLines').appendChild(tr);
+  const defaultDiscount = prefill ? (prefill.discount_pct||0) : (parseFloat(custSel?.options?.[custSel.selectedIndex]?.dataset?.discount) || 0);
+  const card = document.createElement('div');
+  card.className = 'inv-line-card';
+  card.id = `invLine${id}`;
+  card.innerHTML = `
+    <div class="inv-line-card-top">
+      <select class="form-control" id="ilProd${id}" onchange="onInvoiceProdChange(${id})">${_invoiceProdOptsHtml}</select>
+      <button type="button" class="inv-line-remove-btn" title="حذف البند" onclick="delete _invoiceLineLocation[${id}];document.getElementById('invLine${id}').remove();calcInvoiceTotals();">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="inv-line-grid">
+      <div class="inv-line-field">
+        <label>الكمية</label>
+        <input class="form-control" type="number" id="ilQty${id}" value="${prefill?.quantity ?? 1}" min="0.001" step="any" inputmode="decimal" oninput="onInvoiceLineAvailabilityChange(${id});calcInvoiceTotals()">
+      </div>
+      <div class="inv-line-field" style="grid-column: span 2;">
+        <label>المخزن</label>
+        ${locPickerCellHtml(id)}
+      </div>
+      <div class="inv-line-field">
+        <label>سعر الوحدة</label>
+        <input class="form-control" type="number" id="ilPrice${id}" value="${prefill?.unit_price ?? 0}" min="0" step="any" inputmode="decimal" oninput="calcInvoiceTotals()">
+      </div>
+      <div class="inv-line-field">
+        <label>خصم%</label>
+        <input class="form-control" type="number" id="ilDisc${id}" value="${defaultDiscount}" min="0" max="100" inputmode="decimal" oninput="calcInvoiceTotals()">
+      </div>
+      <div class="inv-line-field inv-line-field-total">
+        <label>الإجمالي</label>
+        <div class="il-total-value" id="ilTotal${id}">0.00</div>
+      </div>
+    </div>`;
+  document.getElementById('invoiceLines').appendChild(card);
+
+  if (prefill?.product_id) {
+    const prodSel = document.getElementById(`ilProd${id}`);
+    prodSel.value = prefill.product_id;
+  }
+  _invoiceLineLocation[id] = prefill?.location_id || null;
+  refreshLocPickerLabel(id);
+  if (_invoiceLineLocation[id]) onInvoiceLineAvailabilityChange(id); // يتأكد إن المخزن المحفوظ لسه كافي
   calcInvoiceTotals();
 }
 
@@ -5949,11 +6343,26 @@ function onInvoiceProdChange(id) {
   const sel = document.getElementById(`ilProd${id}`);
   const price = sel.options[sel.selectedIndex]?.dataset?.price || 0;
   document.getElementById(`ilPrice${id}`).value = price;
+  // المنتج اتغيّر، فالمخزن القديم ممكن ميبقاش له معنى — نمسحه ونطلب اختيار جديد بوضوح
+  _invoiceLineLocation[id] = null;
+  refreshLocPickerLabel(id);
   calcInvoiceTotals();
 }
 
+
+// ملحوظة هندسية مهمة (إصلاح باج حقيقي): _invoiceCurrentTotal بيخزّن قيمة الإجمالي
+// كرقم JS خام (مش نص منسّق). قبل كده كانت getInvoiceTotalValue() بتقرأ نص العنصر
+// #ifTotal (اللي متنسّق بـ toLocaleString('ar-EG')) وتحاول تشيل منه أي حرف مش رقم
+// إنجليزي 0-9. المشكلة: على متصفحات/أنظمة تشغيل معينة، toLocaleString('ar-EG')
+// بيطبع الأرقام بالصيغة الهندية العربية (٠١٢٣٤٥٦٧٨٩) مش بالأرقام الإنجليزية —
+// فالـ regex كان بيمسح النص بالكامل (مفيش ولا رقم إنجليزي فيه) ويرجّع NaN، فيتحول
+// لـ 0 بصمت. النتيجة: كل الأقساط بتتحفظ بمبلغ 0.00 من غير أي تحذير للمستخدم، رغم
+// إن إجمالي الفاتورة الحقيقي محسوب صح تمامًا. الحل الجذري: منوقفش نعتمد على قراءة
+// نص منسّق أصلاً — بنحسب الإجمالي كرقم ونخزّنه مباشرة في متغيّر JS، ونقرأ منه.
+let _invoiceCurrentTotal = 0;
+
 function calcInvoiceTotals() {
-  const lines = document.querySelectorAll('#invoiceLines tr');
+  const lines = document.querySelectorAll('#invoiceLines .inv-line-card');
   let subtotal = 0;
   lines.forEach(tr => {
     const idMatch = tr.id.match(/invLine(\d+)/);
@@ -5972,6 +6381,7 @@ function calcInvoiceTotals() {
   const afterDisc = Math.max(0, subtotal - discAmt);
   const taxAmt  = afterDisc * taxPct / 100;
   const total   = afterDisc + taxAmt;
+  _invoiceCurrentTotal = total; // القيمة الرقمية الخام — هي المصدر الوحيد للحقيقة بعد كده
   if (document.getElementById('ifSubtotal'))  document.getElementById('ifSubtotal').textContent  = fmt(subtotal);
   if (document.getElementById('ifDiscount'))  document.getElementById('ifDiscount').textContent  = fmt(discAmt);
   if (document.getElementById('ifTax'))       document.getElementById('ifTax').textContent       = fmt(taxAmt);
@@ -5993,7 +6403,7 @@ function toggleInvoiceInstallSection() {
 }
 
 function getInvoiceTotalValue() {
-  return parseFloat(document.getElementById('ifTotal')?.textContent.replace(/[^0-9.]/g,'')) || 0;
+  return _invoiceCurrentTotal || 0;
 }
 
 // التبديل بين التلقائي واليدوي — التلقائي هو الوضع الافتراضي دايماً عند فتح قسم التقسيط.
@@ -6074,11 +6484,12 @@ function checkManualInvoiceInstallSum() {
 }
 
 async function saveInvoice(status) {
-  const lines = [...document.querySelectorAll('#invoiceLines tr')].map(tr => {
+  const lines = [...document.querySelectorAll('#invoiceLines .inv-line-card')].map(tr => {
     const idMatch = tr.id.match(/invLine(\d+)/);
     if (!idMatch) return null;
     const i = idMatch[1];
     return {
+      lineId:       parseInt(i),
       product_id:   parseInt(document.getElementById(`ilProd${i}`)?.value),
       quantity:     parseFloat(document.getElementById(`ilQty${i}`)?.value)||0,
       unit_price:   parseFloat(document.getElementById(`ilPrice${i}`)?.value)||0,
@@ -6087,6 +6498,18 @@ async function saveInvoice(status) {
   }).filter(Boolean).filter(l => l.product_id && l.quantity > 0);
 
   if (!lines.length) { toast('أضف بنداً على الأقل','danger'); return; }
+
+  // كل بند لازم يكون له مخزن محدد ومتاح فيه كمية كافية فعلاً — ده شرط أساسي
+  // قبل ما نبعت الفاتورة، عشان المستخدم يصلّح أي بند ناقصه مخزن من غير ما يضطر
+  // ينتظر رد السيرفر.
+  for (const l of lines) {
+    const locId = _invoiceLineLocation[l.lineId];
+    if (!locId) { toast('حدد المخزن لكل بند في الفاتورة قبل الحفظ','danger'); return; }
+    const avail = (_stockMap[l.product_id]||{})[locId] || 0;
+    if (avail < l.quantity) { toast('في بند مخزنه المختار لم يعد كافياً للكمية — اختر مخزناً آخر','danger'); return; }
+    l.location_id = locId;
+    delete l.lineId;
+  }
 
   const payType = document.getElementById('ifPayType').value;
   let installments = null;
@@ -6109,7 +6532,6 @@ async function saveInvoice(status) {
 
   const body = {
     customer_id:  parseInt(document.getElementById('ifCustomer').value),
-    location_id:  parseInt(document.getElementById('ifLocation').value),
     invoice_date: document.getElementById('ifDate').value,
     payment_type: payType,
     discount_amount: parseFloat(document.getElementById('ifDiscAmt').value)||0,
@@ -6119,14 +6541,20 @@ async function saveInvoice(status) {
     installments,
   };
   try {
-    const res = await API.post('/invoices', body);
-    // إذا مؤكدة، نؤكدها
-    if (status === 'confirmed' && res.invoice?.id) {
-      await API.post(`/invoices/${res.invoice.id}/confirm`, {});
+    let invoiceId = _invoiceEditId;
+    if (_invoiceEditId) {
+      await API.put(`/invoices/${_invoiceEditId}`, body);
+    } else {
+      const res = await API.post('/invoices', body);
+      invoiceId = res.invoice?.id;
+    }
+    if (status === 'confirmed' && invoiceId) {
+      await API.post(`/invoices/${invoiceId}/confirm`, {});
     }
     closeModal('invoiceFormModal');
     document.getElementById('invoiceFormModal')?.remove();
-    toast('تم إنشاء الفاتورة بنجاح');
+    toast(_invoiceEditId ? 'تم حفظ تعديلات الفاتورة بنجاح' : 'تم إنشاء الفاتورة بنجاح');
+    _invoiceEditId = null;
     loadInvoices();
   } catch(e) { toast(e.message,'danger'); }
 }
@@ -6136,6 +6564,20 @@ async function confirmInvoice(id) {
   try {
     await API.post(`/invoices/${id}/confirm`, {});
     toast('تم تأكيد الفاتورة');
+    loadInvoices();
+  } catch(e) { toast(e.message,'danger'); }
+}
+
+// تعديل فاتورة مسودة — بيفتح نفس فورم الفاتورة الجديدة بس مُعبّى ببيانات الفاتورة الحالية
+function editInvoice(id) {
+  openInvoiceModal(null, id);
+}
+
+async function cancelInvoice(id) {
+  if (!confirm('إلغاء هذه الفاتورة؟ — الفاتورة الملغاة لا يمكن التراجع عن إلغائها.')) return;
+  try {
+    await API.post(`/invoices/${id}/cancel`, {});
+    toast('تم إلغاء الفاتورة');
     loadInvoices();
   } catch(e) { toast(e.message,'danger'); }
 }
@@ -6663,42 +7105,148 @@ function buildInvoiceHTML({ invoice, items }, mode = 'a4') {
   }
 
   const styles = isA4 ? `
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
-    * { box-sizing:border-box; margin:0; padding:0; }
-    body { font-family:'Tajawal',Arial,sans-serif; background:#fff; color:#1a1a1a; direction:rtl; font-size:${fontSize}; }
-    @page { size:A4; margin:15mm; }
-    @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
-    .page { width:${pageW}; min-height:297mm; padding:0; background:#fff; }
-    .header { background:linear-gradient(135deg,#1a1208 0%,#2d2010 100%); color:#e8b84a; padding:28px 32px; display:flex; justify-content:space-between; align-items:center; }
-    .brand-name { font-size:22px; font-weight:700; color:#e8b84a; letter-spacing:0.04em; }
-    .brand-sub { font-size:11px; color:#a89070; margin-top:3px; letter-spacing:0.08em; }
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    html, body { width:100%; background:#fff; }
+    body {
+      font-family:'Tajawal',Arial,sans-serif;
+      background:#fff; color:#1a1a1a;
+      direction:rtl; font-size:13px;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+    @page { size:A4; margin:12mm 10mm; }
+    @media print {
+      body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .no-print { display:none !important; }
+    }
+    /* ─── Page wrapper ─── */
+    .page {
+      width:100%;
+      max-width:190mm;
+      margin:0 auto;
+      background:#fff;
+      min-height:267mm;
+    }
+    /* ─── Header ─── */
+    .header {
+      background:linear-gradient(135deg,#1a1208 0%,#2d2010 100%);
+      color:#e8b84a;
+      padding:22px 28px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      border-radius:4px 4px 0 0;
+    }
+    .brand-name { font-size:20px; font-weight:900; color:#e8b84a; }
+    .brand-sub  { font-size:10px; color:#a89070; margin-top:2px; letter-spacing:0.06em; }
     .invoice-num { text-align:left; }
-    .invoice-num .num { font-size:20px; font-weight:700; color:#f0c97a; font-family:monospace; }
-    .invoice-num .label { font-size:10px; color:#a89070; letter-spacing:0.1em; text-transform:uppercase; }
-    .meta-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#e8b84a22; margin:0; border-bottom:1px solid #e8b84a33; }
-    .meta-cell { padding:12px 16px; background:#faf7f0; }
-    .meta-cell .label { font-size:9px; color:#888; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:3px; }
-    .meta-cell .value { font-size:13px; font-weight:600; color:#1a1208; }
-    .body { padding:24px 32px; }
-    table { width:100%; border-collapse:collapse; }
-    thead tr { background:#1a1208; color:#e8b84a; }
-    thead th { padding:10px 12px; font-size:11px; font-weight:600; letter-spacing:0.06em; text-align:right; }
-    thead th:last-child { text-align:left; }
-    tbody tr:nth-child(even) { background:#faf7f0; }
-    tbody tr { border-bottom:0.5px solid #e8b84a22; }
-    .totals-box { display:flex; justify-content:flex-end; margin-top:20px; }
-    .totals-inner { width:240px; border:1px solid #e8b84a44; border-radius:6px; overflow:hidden; }
-    .total-row { display:flex; justify-content:space-between; padding:8px 14px; border-bottom:0.5px solid #e8b84a22; font-size:12px; }
-    .total-row.grand { background:#1a1208; color:#e8b84a; font-size:16px; font-weight:700; border-bottom:none; }
-    .total-row .val { font-family:monospace; }
-    .status-bar { margin-top:24px; padding:14px 16px; background:#faf7f0; border-radius:6px; border:1px solid #e8b84a33; display:flex; justify-content:space-between; align-items:center; }
-    .status-badge { padding:4px 12px; border-radius:999px; font-size:11px; font-weight:600; }
-    .s-paid { background:#e8f5e9; color:#2e7d32; } .s-partial { background:#fff8e1; color:#b8841a; }
-    .s-confirmed { background:#e3f2fd; color:#1565c0; } .s-draft { background:#f5f5f5; color:#666; }
-    .notes { margin-top:16px; padding:12px 16px; background:#fffbf0; border-right:3px solid #e8b84a; border-radius:0 4px 4px 0; font-size:12px; color:#555; }
-    .footer { margin-top:32px; padding:16px 32px; border-top:1px solid #e8b84a33; text-align:center; font-size:10px; color:#999; }
-    .install-section { margin-top:20px; }
-    .section-title { font-size:12px; font-weight:700; color:#1a1208; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid #e8b84a33; letter-spacing:0.08em; text-transform:uppercase; }
+    .invoice-num .num   { font-size:18px; font-weight:700; color:#f0c97a; font-family:monospace; }
+    .invoice-num .label { font-size:9px;  color:#a89070; letter-spacing:0.1em; }
+    /* ─── Meta bar ─── */
+    .meta-bar {
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      background:#e8b84a22;
+      border:1px solid #e8b84a33;
+      border-top:none;
+    }
+    .meta-cell {
+      padding:10px 14px;
+      background:#faf7f0;
+      overflow:hidden;
+      border-left:1px solid #e8b84a22;
+    }
+    .meta-cell:last-child { border-left:none; }
+    .meta-cell .lbl  { font-size:9px; color:#888; letter-spacing:0.08em; margin-bottom:3px; }
+    .meta-cell .val  { font-size:12px; font-weight:700; color:#1a1208; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    /* ─── Body ─── */
+    .body { padding:20px 24px; }
+    /* ─── Items table ─── */
+    .items-table { width:100%; border-collapse:collapse; margin-bottom:0; }
+    .items-table thead tr { background:#1a1208; color:#e8b84a; }
+    .items-table thead th { padding:9px 11px; font-size:11px; font-weight:600; letter-spacing:0.05em; text-align:right; }
+    .items-table thead th:last-child { text-align:left; }
+    .items-table tbody tr:nth-child(even) { background:#faf7f0; }
+    .items-table tbody tr { border-bottom:0.5px solid #e8b84a22; }
+    .items-table tbody td { padding:8px 11px; }
+    /* ─── Totals ─── */
+    .totals-wrap {
+      display:flex;
+      justify-content:flex-start;   /* في RTL هذا يعني الجانب الأيمن */
+      margin-top:18px;
+    }
+    .totals-inner {
+      min-width:220px;
+      max-width:280px;
+      width:auto;
+      border:1px solid #e8b84a44;
+      border-radius:6px;
+      overflow:hidden;
+    }
+    .t-row {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:7px 14px;
+      border-bottom:0.5px solid #e8b84a22;
+      font-size:12px;
+      gap:12px;
+    }
+    .t-row .v { font-family:monospace; white-space:nowrap; }
+    .t-row.grand {
+      background:#1a1208; color:#e8b84a;
+      font-size:15px; font-weight:700;
+      border-bottom:none;
+    }
+    .t-row.grand .v { color:#f0c97a; }
+    /* ─── Status bar ─── */
+    .status-bar {
+      margin-top:16px; padding:12px 16px;
+      background:#faf7f0; border-radius:6px;
+      border:1px solid #e8b84a33;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .s-badge { padding:3px 10px; border-radius:999px; font-size:10px; font-weight:700; }
+    .s-paid      { background:#e8f5e9; color:#2e7d32; }
+    .s-partial   { background:#fff8e1; color:#b8841a; }
+    .s-confirmed { background:#e3f2fd; color:#1565c0; }
+    .s-draft     { background:#f5f5f5; color:#666;    }
+    .s-cancelled { background:#fdecea; color:#c62828; }
+    /* ─── Installments ─── */
+    .install-section { margin-top:18px; }
+    .section-title {
+      font-size:11px; font-weight:700; color:#1a1208; letter-spacing:0.08em;
+      text-transform:uppercase; padding-bottom:6px;
+      border-bottom:2px solid #e8b84a; margin-bottom:10px;
+    }
+    .install-summary {
+      display:grid; grid-template-columns:1fr 1fr;
+      gap:8px; margin-bottom:12px;
+    }
+    .i-card {
+      background:#faf7f0; border:1px solid #e8b84a33;
+      border-radius:6px; padding:8px 12px; font-size:11px;
+    }
+    .i-card .i-lbl { color:#888; font-size:10px; margin-bottom:2px; }
+    .i-card strong { color:#1a1208; }
+    .inst-table { width:100%; border-collapse:collapse; }
+    .inst-table thead th { background:#f0e8d0; padding:7px 11px; font-size:10px; font-weight:700; text-align:right; border-bottom:1px solid #e8b84a44; }
+    .inst-table tbody td { padding:6px 11px; font-size:11px; border-bottom:0.5px solid #e8b84a22; }
+    .inst-table tbody tr:last-child td { border-bottom:none; }
+    /* ─── Notes / Credit due ─── */
+    .note-box {
+      margin-top:14px; padding:10px 14px;
+      background:#fffbf0; border-right:3px solid #e8b84a;
+      border-radius:0 4px 4px 0; font-size:12px; color:#555;
+    }
+    .note-box.credit { background:#eef6ff; border-right-color:#1565c0; }
+    /* ─── Footer ─── */
+    .footer {
+      margin-top:28px; padding:14px 28px;
+      border-top:1px solid #e8b84a33;
+      text-align:center; font-size:10px; color:#999;
+    }
     ` : `
     * { box-sizing:border-box; margin:0; padding:0; }
     body { font-family:'Courier New',monospace; background:#fff; color:#000; direction:rtl; font-size:${fontSize}; width:${pageW}; }
@@ -6734,8 +7282,8 @@ function buildInvoiceHTML({ invoice, items }, mode = 'a4') {
   ${isA4 ? `
   <div class="header">
     <div>
-      <div class="brand-name">الرفاعي للنجف والإضاءة</div>
-      <div class="brand-sub">Al-Rifai Chandeliers & Lighting</div>
+      <div class="brand-name">مؤسـسـة الرقـاعـي للنجف والاضاءة</div>
+      <div class="brand-sub">Al-Rifai Chandeliers &amp; Lighting</div>
     </div>
     <div class="invoice-num">
       <div class="label">رقم الفاتورة</div>
@@ -6743,52 +7291,60 @@ function buildInvoiceHTML({ invoice, items }, mode = 'a4') {
     </div>
   </div>
   <div class="meta-bar">
-    <div class="meta-cell"><div class="label">التاريخ</div><div class="value">${new Date(invoice.invoice_date).toLocaleDateString('ar-EG')}</div></div>
-    <div class="meta-cell"><div class="label">العميل</div><div class="value">${invoice.customer_name || '—'}</div></div>
-    <div class="meta-cell"><div class="label">نوع الدفع</div><div class="value">${payTypeLabel[invoice.payment_type] || invoice.payment_type}</div></div>
-    <div class="meta-cell"><div class="label">الموقع</div><div class="value">${invoice.location_name || '—'}</div></div>
+    <div class="meta-cell"><div class="lbl">التاريخ</div><div class="val">${new Date(invoice.invoice_date).toLocaleDateString('ar-EG')}</div></div>
+    <div class="meta-cell"><div class="lbl">العميل</div><div class="val">${invoice.customer_name || '—'}</div></div>
+    <div class="meta-cell"><div class="lbl">نوع الدفع</div><div class="val">${payTypeLabel[invoice.payment_type] || invoice.payment_type}</div></div>
+    <div class="meta-cell"><div class="lbl">الموقع</div><div class="val">${invoice.location_name || '—'}</div></div>
   </div>
   <div class="body">
-    <table>
-      <thead><tr><th>المنتج</th><th style="text-align:center;">الكمية</th><th style="text-align:center;">السعر</th><th style="text-align:center;">خصم%</th><th style="text-align:left;">الإجمالي</th></tr></thead>
+    <table class="items-table">
+      <thead><tr>
+        <th>المنتج</th>
+        <th style="text-align:center;">الكمية</th>
+        <th style="text-align:center;">السعر</th>
+        <th style="text-align:center;">خصم%</th>
+        <th style="text-align:left;">الإجمالي</th>
+      </tr></thead>
       <tbody>${itemsRows}</tbody>
     </table>
-    <div class="totals-box">
+    <div class="totals-wrap">
       <div class="totals-inner">
-        <div class="total-row"><span>المجموع الفرعي</span><span class="val">${fmt(invoice.subtotal)} ج.م</span></div>
-        ${invoice.discount_amount > 0 ? `<div class="total-row"><span style="color:#c00;">الخصم</span><span class="val" style="color:#c00;">−${fmt(invoice.discount_amount)} ج.م</span></div>` : ''}
-        ${invoice.tax_amount > 0 ? `<div class="total-row"><span>الضريبة</span><span class="val">${fmt(invoice.tax_amount)} ج.م</span></div>` : ''}
-        <div class="total-row grand"><span>الإجمالي</span><span class="val">${fmt(invoice.total)} ج.م</span></div>
-        ${invoice.paid_amount > 0 ? `<div class="total-row" style="background:#f1f8f1;color:#2e7d32;"><span>المدفوع</span><span class="val">${fmt(invoice.paid_amount)} ج.م</span></div>` : ''}
-        ${invoice.balance_due > 0 ? `<div class="total-row" style="background:#fff5f5;color:#c00;"><span>المتبقي</span><span class="val">${fmt(invoice.balance_due)} ج.م</span></div>` : ''}
+        <div class="t-row"><span>المجموع الفرعي</span><span class="v">${fmt(invoice.subtotal)} ج.م</span></div>
+        ${invoice.discount_amount > 0 ? `<div class="t-row" style="color:#c00;"><span>الخصم</span><span class="v">−${fmt(invoice.discount_amount)} ج.م</span></div>` : ''}
+        ${invoice.tax_amount > 0 ? `<div class="t-row"><span>الضريبة</span><span class="v">${fmt(invoice.tax_amount)} ج.م</span></div>` : ''}
+        <div class="t-row grand"><span>الإجمالي</span><span class="v">${fmt(invoice.total)} ج.م</span></div>
+        ${invoice.paid_amount > 0 ? `<div class="t-row" style="background:#f1f8f1;color:#2e7d32;"><span>المدفوع</span><span class="v">${fmt(invoice.paid_amount)} ج.م</span></div>` : ''}
+        ${invoice.balance_due > 0 ? `<div class="t-row" style="background:#fff5f5;color:#c00;"><span>المتبقي</span><span class="v">${fmt(invoice.balance_due)} ج.م</span></div>` : ''}
       </div>
     </div>
     <div class="status-bar">
-      <span>الحالة: <span class="status-badge ${statusCls}">${invStatusLabel[invoice.status] || invoice.status}</span></span>
-      <span style="font-size:12px;color:#777;">نوع الدفع: <strong>${payTypeLabel[invoice.payment_type] || '—'}</strong></span>
+      <span>الحالة: <span class="s-badge ${statusCls}">${invStatusLabel[invoice.status] || invoice.status}</span></span>
+      <span style="font-size:11px;color:#777;">نوع الدفع: <strong>${payTypeLabel[invoice.payment_type] || '—'}</strong></span>
     </div>
     ${(invoice.installments || []).length ? `
     <div class="install-section">
       <div class="section-title">جدول الأقساط</div>
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;font-size:12px;">
-        <div style="background:#faf7f0;border:1px solid #e8b84a33;border-radius:6px;padding:8px 12px;"><span style="color:#888;">عدد الأقساط:</span> <strong>${installmentSummary.count}</strong> قسط</div>
-        ${installmentSummary.months !== null ? `<div style="background:#faf7f0;border:1px solid #e8b84a33;border-radius:6px;padding:8px 12px;"><span style="color:#888;">مدة التقسيط:</span> <strong>~${installmentSummary.months}</strong> شهر تقريباً</div>` : ''}
-        <div style="background:#faf7f0;border:1px solid #e8b84a33;border-radius:6px;padding:8px 12px;"><span style="color:#888;">أول قسط:</span> <strong>${fmt(installmentSummary.first.amount)} ج.م</strong> — ${new Date(installmentSummary.first.due_date).toLocaleDateString('ar-EG')}</div>
-        <div style="background:#faf7f0;border:1px solid #e8b84a33;border-radius:6px;padding:8px 12px;"><span style="color:#888;">آخر قسط:</span> <strong>${fmt(installmentSummary.last.amount)} ج.م</strong> — ${new Date(installmentSummary.last.due_date).toLocaleDateString('ar-EG')}</div>
+      <div class="install-summary">
+        <div class="i-card"><div class="i-lbl">عدد الأقساط</div><strong>${installmentSummary.count} قسط</strong></div>
+        ${installmentSummary.months !== null ? `<div class="i-card"><div class="i-lbl">مدة التقسيط</div><strong>~${installmentSummary.months} شهر تقريباً</strong></div>` : ''}
+        <div class="i-card"><div class="i-lbl">أول قسط</div><strong>${fmt(installmentSummary.first.amount)} ج.م</strong> — ${new Date(installmentSummary.first.due_date).toLocaleDateString('ar-EG')}</div>
+        <div class="i-card"><div class="i-lbl">آخر قسط</div><strong>${fmt(installmentSummary.last.amount)} ج.م</strong> — ${new Date(installmentSummary.last.due_date).toLocaleDateString('ar-EG')}</div>
       </div>
-      <table><thead><tr><th>القسط</th><th style="text-align:center;">تاريخ الاستحقاق</th><th style="text-align:left;">المبلغ</th></tr></thead>
-      <tbody>${installmentRows}</tbody></table>
+      <table class="inst-table">
+        <thead><tr><th>القسط</th><th style="text-align:center;">تاريخ الاستحقاق</th><th style="text-align:left;">المبلغ</th><th style="text-align:center;">الحالة</th></tr></thead>
+        <tbody>${installmentRows}</tbody>
+      </table>
     </div>` : ''}
     ${invoice.payment_type === 'credit' && invoice.due_date ? `
-    <div class="notes" style="border-right-color:#1565c0;background:#eef6ff;">📌 <strong>تاريخ استحقاق الأجل:</strong> ${new Date(invoice.due_date).toLocaleDateString('ar-EG')}</div>` : ''}
-    ${invoice.notes ? `<div class="notes">📝 ${invoice.notes}</div>` : ''}
+    <div class="note-box credit">📌 <strong>تاريخ استحقاق الأجل:</strong> ${new Date(invoice.due_date).toLocaleDateString('ar-EG')}</div>` : ''}
+    ${invoice.notes ? `<div class="note-box">📝 ${invoice.notes}</div>` : ''}
   </div>
   <div class="footer">
-    الرفاعي للنجف والإضاءة · شكراً لثقتكم
+    بمؤسسة الرقـاعـي للنجف والاضاءة · شكراً لثقتكم
   </div>
   ` : `
   <div class="header">
-    <div class="brand-name">الرفاعي للنجف والإضاءة</div>
+    <div class="brand-name">مؤسـسـة الرقـاعـي للنجف والاضاءة</div>
     <div class="brand-sub">Al-Rifai Chandeliers</div>
     <div class="invoice-num">${invoice.invoice_number}</div>
   </div>
@@ -6819,7 +7375,7 @@ function buildInvoiceHTML({ invoice, items }, mode = 'a4') {
   <div style="font-size:10px;">📌 تاريخ استحقاق الأجل: ${new Date(invoice.due_date).toLocaleDateString('ar-EG')}</div>
   ` : ''}
   ${invoice.notes ? `<div class="divider"></div><div style="font-size:10px;">📝 ${invoice.notes}</div>` : ''}
-  <div class="footer">الرفاعي للنجف والإضاءة<br>شكراً لثقتكم</div>
+  <div class="footer"> بمؤسسة الرقـاعـي للنجف والاضاءة<br>شكراً لثقتكم</div>
   `}
 </div>
 <script>window.onload=()=>{window.print();}<\/script>
@@ -6852,17 +7408,21 @@ async function printInvoiceThermal(id) {
 }
 
 // ─── Build WhatsApp Message Text ───
-function buildWhatsAppMessage(invoice, items) {
+function buildWhatsAppMessage(invoice, items, installments) {
   const sep = '━'.repeat(28);
   const itemsText = (items || []).map(it =>
     `  • ${it.product_name}\n    ${it.quantity} × ${fmt(it.unit_price)} = *${fmt(it.line_total)} ج.م*`
   ).join('\n');
 
-  let msg = `🏮 *الرفاعي للنجف والإضاءة*\n`;
+  const wa_pay = { cash:'نقداً', credit:'آجل', installment:'تقسيط', mixed:'مختلط' };
+
+  let msg = `🏮 *مؤسـسـة الرقـاعـي للنجف والاضاءة*\n`;
   msg += `${sep}\n`;
   msg += `📄 *فاتورة رقم:* ${invoice.invoice_number}\n`;
   msg += `📅 *التاريخ:* ${new Date(invoice.invoice_date).toLocaleDateString('ar-EG')}\n`;
   msg += `👤 *العميل:* ${invoice.customer_name || '—'}\n`;
+  msg += `💳 *نوع الدفع:* ${wa_pay[invoice.payment_type] || invoice.payment_type || '—'}\n`;
+  if (invoice.location_name) msg += `🏪 *الفرع:* ${invoice.location_name}\n`;
   msg += `${sep}\n`;
   msg += `🛒 *البضاعة:*\n${itemsText}\n`;
   msg += `${sep}\n`;
@@ -6870,28 +7430,41 @@ function buildWhatsAppMessage(invoice, items) {
     msg += `  المجموع: ${fmt(invoice.subtotal)} ج.م\n`;
     msg += `  الخصم: −${fmt(invoice.discount_amount)} ج.م\n`;
   }
-  if (invoice.tax_amount > 0) {
-    msg += `  ضريبة: ${fmt(invoice.tax_amount)} ج.م\n`;
-  }
+  if (invoice.tax_amount > 0) msg += `  ضريبة: ${fmt(invoice.tax_amount)} ج.م\n`;
   msg += `💰 *الإجمالي: ${fmt(invoice.total)} ج.م*\n`;
-  if (invoice.paid_amount > 0) {
-    msg += `✅ *المدفوع: ${fmt(invoice.paid_amount)} ج.م*\n`;
-  }
-  if (invoice.balance_due > 0) {
-    msg += `⚠️ *المتبقي: ${fmt(invoice.balance_due)} ج.م*\n`;
-  }
-  msg += `${sep}\n`;
-  msg += `💳 *نوع الدفع:* ${payTypeLabel[invoice.payment_type] || '—'}\n`;
+  if (invoice.paid_amount > 0) msg += `✅ *المدفوع: ${fmt(invoice.paid_amount)} ج.م*\n`;
+  if (invoice.balance_due > 0) msg += `⚠️ *المتبقي: ${fmt(invoice.balance_due)} ج.م*\n`;
 
-  if ((invoice.installments || []).length) {
-    msg += `\n📆 *جدول الأقساط:*\n`;
-    invoice.installments.forEach(ins => {
-      msg += `  قسط #${ins.installment_number}: ${fmt(ins.amount)} ج.م — ${new Date(ins.due_date).toLocaleDateString('ar-EG')}\n`;
+  // تفاصيل الأجل
+  if (invoice.payment_type === 'credit' && invoice.due_date) {
+    msg += `${sep}\n`;
+    msg += `📌 *تاريخ استحقاق الأجل:* ${new Date(invoice.due_date).toLocaleDateString('ar-EG')}\n`;
+  }
+
+  // تفاصيل التقسيط
+  const sorted = (installments || []).slice().sort((a,b) => a.installment_number - b.installment_number);
+  if (sorted.length) {
+    const first = sorted[0], last = sorted[sorted.length - 1];
+    const a = new Date(first.due_date), b = new Date(last.due_date);
+    const months = !isNaN(a) && !isNaN(b)
+      ? Math.max(0, (b.getFullYear()-a.getFullYear())*12 + (b.getMonth()-a.getMonth()))
+      : null;
+    msg += `${sep}\n`;
+    msg += `📆 *تفاصيل التقسيط:*\n`;
+    msg += `  • عدد الأقساط: *${sorted.length}* قسط\n`;
+    if (months !== null) msg += `  • مدة التقسيط: *~${months}* شهر\n`;
+    msg += `  • أول قسط: *${fmt(first.amount)} ج.م* — ${new Date(first.due_date).toLocaleDateString('ar-EG')}\n`;
+    if (sorted.length > 1) msg += `  • آخر قسط: *${fmt(last.amount)} ج.م* — ${new Date(last.due_date).toLocaleDateString('ar-EG')}\n`;
+    msg += `\n📋 *جدول الأقساط:*\n`;
+    sorted.forEach(ins => {
+      const statusLabel = { pending:'⏳', partial:'🔄', paid:'✅', overdue:'🔴' }[ins.status] || '⏳';
+      msg += `  ${statusLabel} قسط #${ins.installment_number}: *${fmt(ins.amount)} ج.م* — ${new Date(ins.due_date).toLocaleDateString('ar-EG')}\n`;
     });
   }
 
   if (invoice.notes) msg += `\n📝 ${invoice.notes}\n`;
-  msg += `\n🙏 *شكراً لثقتكم في الرفاعي للنجف والإضاءة*`;
+  msg += `${sep}\n`;
+  msg += `🙏 *شكراً لثقتكم في مؤسـسـة الرقـاعـي للنجف والاضاءة*`;
   return msg;
 }
 
@@ -6903,9 +7476,9 @@ async function openWhatsAppShareModal(id) {
     data = await API.get(`/invoices/${id}`);
   } catch(e) { toast(e.message || 'خطأ', 'danger'); return; }
 
-  const { invoice, items } = data;
+  const { invoice, items, installments } = data;
   const savedSettings = getInvoiceSettings();
-  const message = buildWhatsAppMessage(invoice, items);
+  const message = buildWhatsAppMessage(invoice, items, installments || []);
   const customerPhone = savedSettings[`wa_phone_${invoice.customer_id}`] || invoice.customer_phone || '';
 
   const html = `
@@ -7026,6 +7599,7 @@ viewInvoiceDetail = async function(id) {
       <tr>
         <td style="font-weight:600;">${it.product_name||'—'}</td>
         <td style="text-align:center;font-family:var(--font-mono);">${it.quantity}</td>
+        <td style="text-align:center;font-size:11px;color:var(--cream-3);">${it.location_name||'—'}</td>
         <td style="text-align:center;font-family:var(--font-mono);">${fmt(it.unit_price)}</td>
         <td style="text-align:center;font-family:var(--font-mono);color:var(--danger);">${it.discount_pct||0}%</td>
         <td style="text-align:center;font-family:var(--font-mono);font-weight:700;">${fmt(it.line_total)}</td>
@@ -7042,8 +7616,13 @@ viewInvoiceDetail = async function(id) {
             <button class="modal-close" onclick="closeModal('invoiceDetailModal')">✕</button>
           </div>
           <div class="modal-body">
+            ${invoice.status==='draft' ? `
+            <div class="draft-edit-banner">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span>الفاتورة لسه مسودة ولم تُخصم من المخزون بعد — تقدر تعدّلها أو تلغيها من تحت قبل التأكيد.</span>
+            </div>` : ''}
             <table style="margin-bottom:var(--s-lg);">
-              <thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th><th>خصم%</th><th>الإجمالي</th></tr></thead>
+              <thead><tr><th>المنتج</th><th>الكمية</th><th>المخزن</th><th>السعر</th><th>خصم%</th><th>الإجمالي</th></tr></thead>
               <tbody>${itemsHtml}</tbody>
             </table>
             <div style="display:flex;justify-content:flex-end;">
@@ -7081,7 +7660,9 @@ viewInvoiceDetail = async function(id) {
           </div>
           <div class="modal-footer">
             <button class="btn btn-ghost" onclick="closeModal('invoiceDetailModal')">إغلاق</button>
+            ${invoice.status==='draft'?`<button class="btn btn-subtle" style="color:var(--danger);border-color:rgba(240,128,128,0.3);" onclick="closeModal('invoiceDetailModal');cancelInvoice(${invoice.id})">إلغاء الفاتورة</button>`:''}
             ${invoice.status!=='paid'&&invoice.balance_due>0?`<button class="btn btn-subtle" onclick="closeModal('invoiceDetailModal');openPayCustomerModal(${invoice.customer_id},'${(invoice.customer_name||'').replace(/'/g,"\\'")}',${invoice.balance_due})">تحصيل دفعة</button>`:''}
+            ${invoice.status==='draft'?`<button class="btn btn-subtle" onclick="closeModal('invoiceDetailModal');editInvoice(${invoice.id})">تعديل الفاتورة</button>`:''}
             ${invoice.status==='draft'?`<button class="btn btn-primary" onclick="closeModal('invoiceDetailModal');confirmInvoice(${invoice.id})">تأكيد الفاتورة</button>`:''}
           </div>
         </div>
